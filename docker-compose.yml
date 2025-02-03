@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+    networks:
+      - backend-network  # <-- Agregado para incluir el servicio en la red
+
+  app:
+    build:
+      context: .  # <-- Asegura que está bien definido
+      dockerfile: docker-back.Dockerfile
+    container_name: spring-app
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+    networks:
+      - backend-network  # <-- Agregado para incluir el servicio en la red
+
+networks:
+  backend-network:  # <-- Agregada la definición de la red
+    driver: bridge
